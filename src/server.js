@@ -9,6 +9,7 @@ const morgan = require('morgan');
 const errorHandler = require( './middleware/error.js');
 const notFound = require( './middleware/404.js' );
 
+const authRouter = require('./auth/router');
 const v1Router = require('./routes/v1router');
 
 // Prepare the express app
@@ -25,6 +26,7 @@ app.use(express.urlencoded({extended:true}));
 // Routes
 //app.use('/api/v1', productsRouter);
 //app.use('/api/v1', categoriesRouter);
+app.use(authRouter);
 app.use('/api/v1', v1Router);
 
 // Catchalls
