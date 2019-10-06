@@ -52,7 +52,7 @@ describe.each(Object.keys(users))('%s', (username) => {
   });
 
   describe('/api/v1/categories', () => {
-    it('🍕 Can create things using POST /api/v1/categories 🍕', () => {
+    it('🍕 Correct permission for POST /api/v1/categories 🍕', () => {
       switch (username) {
       case 'editor':
       case 'admin':
@@ -74,7 +74,7 @@ describe.each(Object.keys(users))('%s', (username) => {
       }
     });
 
-    it('🍜 Can get all the categories using GET /api/v1/categories 🍜', () => {
+    it('🍜 Correct permission for GET /api/v1/categories 🍜', () => {
       switch (username) {
       case 'visitor':
         return mockedGoose
@@ -95,7 +95,7 @@ describe.each(Object.keys(users))('%s', (username) => {
       }
     });
 
-    it(`🍩 Can get a single record using GET /api/v1/categories/:id 🍩`, () => {
+    it(`🍩 Correct permission for GET /api/v1/categories/:id 🍩`, () => {
       switch (username) {
       case 'visitor':
         return mockedGoose
@@ -129,7 +129,7 @@ describe.each(Object.keys(users))('%s', (username) => {
         .expect(username === 'visitor' ? 401 : 404);
     });
 
-    it(`🥞 Can update a single record using PUT /api/v1/categories/:id 🥞`, () => {
+    it(`🥞 Correct permission for PUT /api/v1/categories/:id 🥞`, () => {
       switch(username) {
       case 'admin':
       case 'editor':
@@ -180,7 +180,7 @@ describe.each(Object.keys(users))('%s', (username) => {
         .expect(username === 'admin' || username === 'editor' ? 404 : 401);
     });
 
-    it(`🥓 Can delete a single record using DELETE /api/v1/categories/:id 🥓`, () => {
+    it(`🥓 Correct permission for DELETE /api/v1/categories/:id 🥓`, () => {
       switch(username) {
       case 'admin':
         return mockedGoose
@@ -232,7 +232,7 @@ describe.each(Object.keys(users))('%s', (username) => {
   //.send({name: 'Test Product', description: 'A test product...', price: 30, stock: 10, available: true})
 
   describe('/api/v1/products', () => {
-    it('🍕 Can create things using POST /api/v1/products 🍕', () => {
+    it('🍕 Correct permission for POST /api/v1/products 🍕', () => {
       switch (username) {
       case 'editor':
       case 'admin':
@@ -254,7 +254,7 @@ describe.each(Object.keys(users))('%s', (username) => {
       }
     });
 
-    it('🍜 Can get all the categories using GET /api/v1/products 🍜', () => {
+    it('🍜 Correct permission for GET /api/v1/products 🍜', () => {
       switch (username) {
       case 'visitor':
         return mockedGoose
@@ -275,7 +275,7 @@ describe.each(Object.keys(users))('%s', (username) => {
       }
     });
 
-    it(`🍩 Can get a single record using GET /api/v1/products/:id 🍩`, () => {
+    it(`🍩 Correct permission for GET /api/v1/products/:id 🍩`, () => {
       switch (username) {
       case 'visitor':
         return mockedGoose
@@ -309,7 +309,7 @@ describe.each(Object.keys(users))('%s', (username) => {
         .expect(username === 'visitor' ? 401 : 404);
     });
 
-    it(`🥞 Can update a single record using PUT /api/v1/products/:id 🥞`, () => {
+    it(`🥞 Correct permission for PUT /api/v1/products/:id 🥞`, () => {
       switch(username) {
       case 'admin':
       case 'editor':
@@ -360,7 +360,7 @@ describe.each(Object.keys(users))('%s', (username) => {
         .expect(username === 'admin' || username === 'editor' ? 404 : 401);
     });
 
-    it(`🥓 Can delete a single record using DELETE /api/v1/products/:id 🥓`, () => {
+    it(`🥓 Correct permission for DELETE /api/v1/products/:id 🥓`, () => {
       switch(username) {
       case 'admin':
         return mockedGoose
