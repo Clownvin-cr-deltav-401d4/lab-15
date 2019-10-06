@@ -229,7 +229,7 @@ describe.each(Object.keys(users))('%s', (username) => {
     });
   });
   
-//.send({name: 'Test Product', description: 'A test product...', price: 30, stock: 10, available: true})
+  //.send({name: 'Test Product', description: 'A test product...', price: 30, stock: 10, available: true})
 
   describe('/api/v1/products', () => {
     it('🍕 Can create things using POST /api/v1/products 🍕', () => {
