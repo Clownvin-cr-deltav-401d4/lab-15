@@ -1,35 +1,29 @@
-# LAB - 8-9
+# LAB - 15
 
-## Routes and Supergoose tests - JSDoc and Swagger
+## Protected Routes with Authorization
+Combined Lab 8-9 (Basic Mongoose-based API) with lab 14 (access tokens and authorization)
 
 ### Author: Calvin Hall
 
 ### Links and Resources
-* [submission PR](https://github.com/Clownvin-cr-deltav-401d4/lab-08/pull/1)
-* [travis](https://www.travis-ci.com/Clownvin-cr-deltav-401d4/lab-08)
-* [back-end](https://clownvins-lab-9.herokuapp.com/api/v1)
+* [submission PR](https://github.com/Clownvin-cr-deltav-401d4/lab-15/pull/1)
+* [travis](https://www.travis-ci.com/Clownvin-cr-deltav-401d4/lab-15)
 
 ## Modules
 ### v1router
 Exports a router which handles all routes, assuming that the appendModel middleware has run and attached a model to use to each request. All the APIs below use this router, but support their own model which works separately from eachother.
-### categories-routes
+### find-model
+Attached a model to routes with a model parameter, based on the parameter
+### model-routes
 Exports an express Routes object, with routes for:
-* GET /api/v1/categories - Returns all categories
-* GET /api/v1/categories/:id - Returns the category with id
-* POST /api/v1/categories - Creates a new category
-* PUT /api/v1/categories/:id - Updates a category with id
-* DELETE /api/v1/categories/:id - Deletes a category with id
-
-### products-routes
-Exports an express Routes object, with routes for:
-* GET /api/v1/products - Returns all products
-* GET /api/v1/products/:id - Returns the product with id
-* POST /api/v1/products - Creates a new product
-* PUT /api/v1/products/:id - Updates a product with id
-* DELETE /api/v1/products/:id - Deletes a product with id
+* GET /api/v1/:model - Returns all documents stored in the model. Must have read access
+* GET /api/v1/:model/:id - Returns the document from model with id. Must have read access
+* POST /api/v1/:model - Creates a new document in the model. Must have write access
+* PUT /api/v1/:model/:id - Updates a document in the model with id. Must have update access
+* DELETE /api/v1/:model/:id - Deletes a document in the model with id. Must have delete access
 
 #### Running the app
-* `npm run start`
+* `npm start`
   
 #### Tests
 * `npm test`
