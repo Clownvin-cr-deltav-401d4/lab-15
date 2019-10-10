@@ -3,16 +3,17 @@
 const express = require('express');
 
 const appendModel = require('../middleware/model-finder');
+const auth = require('../auth/middleware');
 
 const router = express.Router();
 
 router.param('model', appendModel);
 
-router.get('/:model', getAllHandler);
-router.post('/:model', postHandler);
-router.get('/:model/:id', getHandler);
-router.put('/:model/:id', putHandler);
-router.delete('/:model/:id', deleteHandler);
+router.get('/:model', auth('read'), getAllHandler);
+router.post('/:model', auth('create'), postHandler);
+router.get('/:model/:id', auth('read'), getHandler);
+router.put('/:model/:id', auth('update'), putHandler);
+router.delete('/:model/:id', auth('delete'), deleteHandler);
 
 /**
  * Sends a result, and handles if the result was null by sending a 500

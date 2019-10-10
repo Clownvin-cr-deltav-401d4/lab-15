@@ -10,8 +10,8 @@
 function handleError(err, req, res, next) {
   req.lint = null;
   next.lint = null;
-  let error = { error: err };
-  res.statusCode = 500;
+  let error = { error: err.message || err };
+  res.statusCode = err.status || 500;
   res.statusMessage = 'Server Error';
   res.setHeader('Content-Type', 'application/json');
   res.write( JSON.stringify(error) );
