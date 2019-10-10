@@ -99,13 +99,11 @@ describe.each(Object.keys(users))('%s', (username) => {
         expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
         return;
       default:
-        let gotBody;
         await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(({body}) => {
-            gotBody = body.results[0];
             expect(body.results[0]).toHaveProperty('_id');
             expect(body.results[0]).toHaveProperty('name', 'Test');
           });
@@ -115,6 +113,7 @@ describe.each(Object.keys(users))('%s', (username) => {
     });
 
     it(`🍩 Correct permission for GET /api/v1/categories/:id 🍩`, async () => {
+      let id;
       switch (username) {
       case 'visitor':
         await mockedGoose
@@ -125,13 +124,14 @@ describe.each(Object.keys(users))('%s', (username) => {
         expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
         return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(response => {
             expect(response.body.count).toBeTruthy();
             const record = response.body.results[0];
+            id = record._id;
             return mockedGoose
               .get(`/api/v1/categories/${record._id}`)
               .set('Authorization', `Bearer ${token}`)
@@ -140,7 +140,7 @@ describe.each(Object.keys(users))('%s', (username) => {
                 expect(record).toStrictEqual(response.body);
               });
           });
-        expect(Q.publish).toHaveBeenCalledWith('database', 'read');
+        expect(Q.publish).toHaveBeenCalledWith('database', 'read', {id: id});
         return;
       }
     });
@@ -153,10 +153,10 @@ describe.each(Object.keys(users))('%s', (username) => {
     });
 
     it(`🥞 Correct permission for PUT /api/v1/categories/:id 🥞`, async () => {
+      let record;
       switch(username) {
       case 'admin':
       case 'editor':
-        let record;
         await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
@@ -214,9 +214,9 @@ describe.each(Object.keys(users))('%s', (username) => {
     });
 
     it(`🥓 Correct permission for DELETE /api/v1/categories/:id 🥓`, async () => {
+      let id;
       switch(username) {
       case 'admin':
-        let id;
         await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
@@ -255,7 +255,7 @@ describe.each(Object.keys(users))('%s', (username) => {
         expect(Q.publish).toHaveBeenCalledWith('database', 'error', {error: 'You don\'t have permission to delete that resource'});
         return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(401);
@@ -309,13 +309,11 @@ describe.each(Object.keys(users))('%s', (username) => {
         expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
         return;
       default:
-        let gotBody;
         await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(({body}) => {
-            gotBody = body.results[0];
             expect(body.results[0]).toHaveProperty('_id');
             expect(body.results[0]).toHaveProperty('name', 'Test');
           });
@@ -325,6 +323,7 @@ describe.each(Object.keys(users))('%s', (username) => {
     });
 
     it(`🍩 Correct permission for GET /api/v1/products/:id 🍩`, async () => {
+      let id;
       switch (username) {
       case 'visitor':
         await mockedGoose
@@ -335,13 +334,14 @@ describe.each(Object.keys(users))('%s', (username) => {
         expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
         return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(response => {
             expect(response.body.count).toBeTruthy();
             const record = response.body.results[0];
+            id = record._id;
             return mockedGoose
               .get(`/api/v1/products/${record._id}`)
               .set('Authorization', `Bearer ${token}`)
@@ -350,7 +350,7 @@ describe.each(Object.keys(users))('%s', (username) => {
                 expect(record).toStrictEqual(response.body);
               });
           });
-        expect(Q.publish).toHaveBeenCalledWith('database', 'read');
+        expect(Q.publish).toHaveBeenCalledWith('database', 'read', {id: id});
         return;
       }
     });
@@ -363,10 +363,10 @@ describe.each(Object.keys(users))('%s', (username) => {
     });
 
     it(`🥞 Correct permission for PUT /api/v1/products/:id 🥞`, async () => {
+      let record;
       switch(username) {
       case 'admin':
       case 'editor':
-        let record;
         await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
@@ -424,9 +424,9 @@ describe.each(Object.keys(users))('%s', (username) => {
     });
 
     it(`🥓 Correct permission for DELETE /api/v1/products/:id 🥓`, async () => {
+      let id;
       switch(username) {
       case 'admin':
-        let id;
         await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
@@ -465,7 +465,7 @@ describe.each(Object.keys(users))('%s', (username) => {
         expect(Q.publish).toHaveBeenCalledWith('database', 'error', {error: 'You don\'t have permission to delete that resource'});
         return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(401);

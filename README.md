@@ -6,7 +6,8 @@ Combined Lab 8-9 (Basic Mongoose-based API) with lab 14 (access tokens and autho
 ### Author: Calvin Hall
 
 ### Links and Resources
-* [submission PR](https://github.com/Clownvin-cr-deltav-401d4/lab-15/pull/1)
+* [submission PR(lab-15)](https://github.com/Clownvin-cr-deltav-401d4/lab-15/pull/1)
+* [submission PR(lab-19)](https://github.com/Clownvin-cr-deltav-401d4/lab-15/pull/2)
 * [travis](https://www.travis-ci.com/Clownvin-cr-deltav-401d4/lab-15)
 
 ## Modules
