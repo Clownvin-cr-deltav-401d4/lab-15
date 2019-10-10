@@ -14,6 +14,7 @@ const v1Router = require('./routes/v1router');
 
 // Prepare the express app
 const app = express();
+const Q = require('@nmq/q/client');
 
 //app.use(express.static('../docs'));
 // App Level MW

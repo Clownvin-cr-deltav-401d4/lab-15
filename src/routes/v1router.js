@@ -7,6 +7,8 @@ const auth = require('../auth/middleware');
 
 const router = express.Router();
 
+const Q = require('@nmq/q/client');
+
 router.param('model', appendModel);
 
 router.get('/:model', auth('read'), getAllHandler);
@@ -26,6 +28,8 @@ function sendResult(result, res, status = 200, id) {
   if (!result && id) {
     return respondWith404(id, res);
   } else if (!result) {
+    const error = {error: 'Internal server error: Result was null without passing ID.'};
+    Q.publish('database', 'error', error);
     return res.status(500).json({error: 'Internal server error: Result was null without passing ID.'});
   }
   res.status(status).json(result);
@@ -37,7 +41,9 @@ function sendResult(result, res, status = 200, id) {
  * @param {*} res the response object
  */
 function respondWith404(id, res) {
-  res.status(404).json({error: `No item exists with id ${id}`});
+  const error = {error: `No item exists with id ${id}`};
+  Q.publish('database', 'error', error);
+  res.status(404).json(error);
 }
 
 /**

@@ -21,7 +21,7 @@ function appendModel(req, res, next) {
     model = products;
     break;
   default:
-    return res.status(404).json({error: `No data-model exists for "${req.params.model}"`});
+    throw {message: `No data-model exists for "${req.params.model}"`, status: 404};
   }
   req.model = model;
   next();

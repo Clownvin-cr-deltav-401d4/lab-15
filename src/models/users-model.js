@@ -10,6 +10,7 @@ const TOKEN_EXPIRE = process.env.TOKEN_LIFETIME || '5m';
 const SECRET = process.env.SECRET || 'foobar';
 
 const usedTokens = new Set();
+const Q = require('@nmq/q/client');
 
 const users = new mongoose.Schema({
   username: {type:String, required:true, unique:true},
@@ -36,6 +37,10 @@ users.pre('findOne', function () {
   }
 });
 
+users.post('findOne', function() {
+  Q.publish('database', 'read', {model: 'users'});
+});
+
 users.pre('save', async function() {
   if (this.isModified('password'))
   {
@@ -44,6 +49,7 @@ users.pre('save', async function() {
 });
 
 users.post('save', async function() {
+  Q.publish('database', 'create', {model: 'users', username: this.username});
   try {
     await this.populate('acl').execPopulate();
     return;

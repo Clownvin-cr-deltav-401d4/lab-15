@@ -1,5 +1,7 @@
 'use strict';
 
+const Q = require('@nmq/q/client');
+
 /** Class representing a generic mongo model. */
 class Model {
 
@@ -18,8 +20,10 @@ class Model {
    */
   get(_id) {
     if (_id) {
+      Q.publish('database', 'read', {id: _id});
       return this.schema.findOne({_id: _id});
     } else {
+      Q.publish('database', 'read', 'all');
       return this.schema.find({});
     }
   }
@@ -31,6 +35,7 @@ class Model {
    */
   post(record) {
     let newRecord = new this.schema(record);
+    Q.publish('database', 'create', {record: newRecord.name});
     return newRecord.save();
   }
 
@@ -41,6 +46,7 @@ class Model {
    * @returns {*}
    */
   put(_id, record) {
+    Q.publish('database', 'update', {id: _id, record});
     return this.schema.findByIdAndUpdate(_id, record, {new: true});
   }
 
@@ -50,6 +56,7 @@ class Model {
    * @returns {*}
    */
   delete(_id) {
+    Q.publish('database', 'delete', {id: _id});
     return this.schema.findByIdAndDelete(_id);
   }
 

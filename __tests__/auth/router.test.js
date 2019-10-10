@@ -8,6 +8,7 @@ const server = require('../../src/server').server;
 const supergoose = require('../supergoose');
 
 const mockRequest = supergoose(server);
+const Q = require('@nmq/q/client');
 
 let users = {
   admin: {username: 'admin', password: 'password', role: 'admin'},
@@ -15,13 +16,17 @@ let users = {
   user: {username: 'user', password: 'password', role: 'user'},
 };
 
-beforeAll(async () => {
-});
-
-
 describe('Auth Router', () => {
   
   Object.keys(users).forEach( userType => {
+
+    beforeEach(() => {
+      jest.spyOn(Q, 'publish');
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
     
     describe(`${userType} users`, () => {
       
@@ -37,6 +42,7 @@ describe('Auth Router', () => {
             encodedToken = results.text;
             expect(token.id).toBeDefined();
             expect(token.capabilities).toBeDefined();
+            expect(Q.publish).toHaveBeenCalledWith('database', 'create', {model: 'users', username: users[userType].username});
           });
       });
 
@@ -47,6 +53,7 @@ describe('Auth Router', () => {
             var token = jwt.verify(results.text, process.env.SECRET);
             expect(token.id).toEqual(id);
             expect(token.capabilities).toBeDefined();
+            expect(Q.publish).toHaveBeenCalledWith('database', 'read', {model: 'users'});
           });
       });
 
@@ -57,6 +64,7 @@ describe('Auth Router', () => {
             var token = jwt.verify(results.text, process.env.SECRET);
             expect(token.id).toEqual(id);
             expect(token.capabilities).toBeDefined();
+            expect(Q.publish).toHaveBeenCalledWith('database', 'read', {model: 'users'});
           });
       });
 
