@@ -11,6 +11,7 @@ const jwt = require('jsonwebtoken');
 
 const server = require('../src/server').server;
 const supergoose = require('./supergoose.js');
+const Q = require('@nmq/q/client');
 
 const mockedGoose = supergoose(server);
 
@@ -33,11 +34,20 @@ beforeAll(async () => {
   await Promise.all(Object.values(users).map(user => new Users(user).save()));
 });
 
+beforeEach(() => {
+  jest.spyOn(Q, 'publish');
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe('Server', () => {
-  it('🍔 Responds with 404 if model not found 🍔', () => {
-    return mockedGoose
+  it('🍔 Responds with 404 if model not found 🍔', async () => {
+    await mockedGoose
       .get('/api/v1/cats')
       .expect(404);
+    
   });
 });
 
@@ -52,11 +62,11 @@ describe.each(Object.keys(users))('%s', (username) => {
   });
 
   describe('/api/v1/categories', () => {
-    it('🍕 Correct permission for POST /api/v1/categories 🍕', () => {
+    it('🍕 Correct permission for POST /api/v1/categories 🍕', async () => {
       switch (username) {
       case 'editor':
       case 'admin':
-        return mockedGoose
+        await mockedGoose
           .post('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .send({ name: 'Test', description: 'Description' })
@@ -64,53 +74,64 @@ describe.each(Object.keys(users))('%s', (username) => {
           .then(result => {
             expect(result.body).toHaveProperty('_id');
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'create', {record: 'Test'});
+        return;
       default:
-        return mockedGoose
+        await mockedGoose
           .post('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .send({ name: 'Test', description: 'Description' })
           .expect(401)
           .then(({body}) => expect(body.error).toBe('You don\'t have permission to create that resource'));
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to create that resource' });
+        return;
       }
     });
 
-    it('🍜 Correct permission for GET /api/v1/categories 🍜', () => {
+    it('🍜 Correct permission for GET /api/v1/categories 🍜', async () => {
       switch (username) {
       case 'visitor':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(401)
           .then(({body}) => expect(body.error).toBe('You don\'t have permission to read that resource'));
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
+        return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(({body}) => {
-            console.log(body.results[0]);
             expect(body.results[0]).toHaveProperty('_id');
             expect(body.results[0]).toHaveProperty('name', 'Test');
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'read', 'all');
+        return;
       }
     });
 
-    it(`🍩 Correct permission for GET /api/v1/categories/:id 🍩`, () => {
+    it(`🍩 Correct permission for GET /api/v1/categories/:id 🍩`, async () => {
+      let id;
       switch (username) {
       case 'visitor':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories/3123123123')
           .set('Authorization', `Bearer ${token}`)
           .expect(401)
           .then(({body}) => expect(body.error).toBe('You don\'t have permission to read that resource'));
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
+        return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(response => {
             expect(response.body.count).toBeTruthy();
             const record = response.body.results[0];
+            id = record._id;
             return mockedGoose
               .get(`/api/v1/categories/${record._id}`)
               .set('Authorization', `Bearer ${token}`)
@@ -119,6 +140,8 @@ describe.each(Object.keys(users))('%s', (username) => {
                 expect(record).toStrictEqual(response.body);
               });
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'read', {id: id});
+        return;
       }
     });
 
@@ -129,17 +152,20 @@ describe.each(Object.keys(users))('%s', (username) => {
         .expect(username === 'visitor' ? 401 : 404);
     });
 
-    it(`🥞 Correct permission for PUT /api/v1/categories/:id 🥞`, () => {
+    it(`🥞 Correct permission for PUT /api/v1/categories/:id 🥞`, async () => {
+      let record;
       switch(username) {
       case 'admin':
       case 'editor':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(response => {
             expect(response.body.count).toBeTruthy();
-            const record = response.body.results[0];
+            record = response.body.results[0];
+            jest.restoreAllMocks();
+            jest.spyOn(Q, 'publish');
             return mockedGoose
               .put(`/api/v1/categories/${record._id}`)
               .set('Authorization', `Bearer ${token}`)
@@ -149,8 +175,11 @@ describe.each(Object.keys(users))('%s', (username) => {
                 expect(response.body).toHaveProperty('description', 'Updated, yay!');
               });
           });
+        record.description = 'Updated, yay!';
+        expect(Q.publish).toHaveBeenCalledWith('database', 'update', {id: record._id, record: {description: 'Updated, yay!'}});
+        return;
       case 'user':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
@@ -164,11 +193,15 @@ describe.each(Object.keys(users))('%s', (username) => {
               .expect(401)
               .then(({body}) => expect(body.error).toBe('You don\'t have permission to update that resource'));
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to update that resource' });
+        return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(401);
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
+        return;
       }
     });
 
@@ -180,16 +213,20 @@ describe.each(Object.keys(users))('%s', (username) => {
         .expect(username === 'admin' || username === 'editor' ? 404 : 401);
     });
 
-    it(`🥓 Correct permission for DELETE /api/v1/categories/:id 🥓`, () => {
+    it(`🥓 Correct permission for DELETE /api/v1/categories/:id 🥓`, async () => {
+      let id;
       switch(username) {
       case 'admin':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(response => {
             expect(response.body.count).toBeTruthy();
             const record = response.body.results[0];
+            id = record._id;
+            jest.restoreAllMocks();
+            jest.spyOn(Q, 'publish');
             return mockedGoose
               .delete(`/api/v1/categories/${record._id}`)
               .set('Authorization', `Bearer ${token}`)
@@ -198,9 +235,11 @@ describe.each(Object.keys(users))('%s', (username) => {
                 console.log(response.body);
               });
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'delete', {id: id});
+        return;
       case 'editor':
       case 'user':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
@@ -213,11 +252,14 @@ describe.each(Object.keys(users))('%s', (username) => {
               .expect(401)
               .then(({body}) => expect(body.error).toBe('You don\'t have permission to delete that resource'));
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', {error: 'You don\'t have permission to delete that resource'});
+        return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/categories')
           .set('Authorization', `Bearer ${token}`)
           .expect(401);
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
       }
     });
 
@@ -229,14 +271,12 @@ describe.each(Object.keys(users))('%s', (username) => {
     });
   });
   
-  //.send({name: 'Test Product', description: 'A test product...', price: 30, stock: 10, available: true})
-
   describe('/api/v1/products', () => {
-    it('🍕 Correct permission for POST /api/v1/products 🍕', () => {
+    it('🍕 Correct permission for POST /api/v1/products 🍕', async () => {
       switch (username) {
       case 'editor':
       case 'admin':
-        return mockedGoose
+        await mockedGoose
           .post('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .send({name: 'Test', description: 'A test product...', price: 30, stock: 10, available: true})
@@ -244,53 +284,64 @@ describe.each(Object.keys(users))('%s', (username) => {
           .then(result => {
             expect(result.body).toHaveProperty('_id');
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'create', {record: 'Test'});
+        return;
       default:
-        return mockedGoose
-          .post('/api/v1/categories')
+        await mockedGoose
+          .post('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .send({name: 'Test', description: 'A test product...', price: 30, stock: 10, available: true})
           .expect(401)
           .then(({body}) => expect(body.error).toBe('You don\'t have permission to create that resource'));
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to create that resource' });
+        return;
       }
     });
 
-    it('🍜 Correct permission for GET /api/v1/products 🍜', () => {
+    it('🍜 Correct permission for GET /api/v1/products 🍜', async () => {
       switch (username) {
       case 'visitor':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(401)
           .then(({body}) => expect(body.error).toBe('You don\'t have permission to read that resource'));
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
+        return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(({body}) => {
-            console.log(body.results[0]);
             expect(body.results[0]).toHaveProperty('_id');
             expect(body.results[0]).toHaveProperty('name', 'Test');
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'read', 'all');
+        return;
       }
     });
 
-    it(`🍩 Correct permission for GET /api/v1/products/:id 🍩`, () => {
+    it(`🍩 Correct permission for GET /api/v1/products/:id 🍩`, async () => {
+      let id;
       switch (username) {
       case 'visitor':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products/3123123123')
           .set('Authorization', `Bearer ${token}`)
           .expect(401)
           .then(({body}) => expect(body.error).toBe('You don\'t have permission to read that resource'));
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
+        return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(response => {
             expect(response.body.count).toBeTruthy();
             const record = response.body.results[0];
+            id = record._id;
             return mockedGoose
               .get(`/api/v1/products/${record._id}`)
               .set('Authorization', `Bearer ${token}`)
@@ -299,27 +350,32 @@ describe.each(Object.keys(users))('%s', (username) => {
                 expect(record).toStrictEqual(response.body);
               });
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'read', {id: id});
+        return;
       }
     });
 
     it(`🍀 GET Will respond with 404 when ID does not exist 🍀`, () => {
       return mockedGoose
-        .get('/api/v1/categories/555555555555555555555555')
+        .get('/api/v1/products/555555555555555555555555')
         .set('Authorization', `Bearer ${token}`)
         .expect(username === 'visitor' ? 401 : 404);
     });
 
-    it(`🥞 Correct permission for PUT /api/v1/products/:id 🥞`, () => {
+    it(`🥞 Correct permission for PUT /api/v1/products/:id 🥞`, async () => {
+      let record;
       switch(username) {
       case 'admin':
       case 'editor':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(response => {
             expect(response.body.count).toBeTruthy();
-            const record = response.body.results[0];
+            record = response.body.results[0];
+            jest.restoreAllMocks();
+            jest.spyOn(Q, 'publish');
             return mockedGoose
               .put(`/api/v1/products/${record._id}`)
               .set('Authorization', `Bearer ${token}`)
@@ -329,8 +385,11 @@ describe.each(Object.keys(users))('%s', (username) => {
                 expect(response.body).toHaveProperty('description', 'Updated, yay!');
               });
           });
+        record.description = 'Updated, yay!';
+        expect(Q.publish).toHaveBeenCalledWith('database', 'update', {id: record._id, record: {description: 'Updated, yay!'}});
+        return;
       case 'user':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
@@ -344,11 +403,15 @@ describe.each(Object.keys(users))('%s', (username) => {
               .expect(401)
               .then(({body}) => expect(body.error).toBe('You don\'t have permission to update that resource'));
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to update that resource' });
+        return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(401);
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
+        return;
       }
     });
 
@@ -360,16 +423,20 @@ describe.each(Object.keys(users))('%s', (username) => {
         .expect(username === 'admin' || username === 'editor' ? 404 : 401);
     });
 
-    it(`🥓 Correct permission for DELETE /api/v1/products/:id 🥓`, () => {
+    it(`🥓 Correct permission for DELETE /api/v1/products/:id 🥓`, async () => {
+      let id;
       switch(username) {
       case 'admin':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
           .then(response => {
             expect(response.body.count).toBeTruthy();
             const record = response.body.results[0];
+            id = record._id;
+            jest.restoreAllMocks();
+            jest.spyOn(Q, 'publish');
             return mockedGoose
               .delete(`/api/v1/products/${record._id}`)
               .set('Authorization', `Bearer ${token}`)
@@ -378,9 +445,11 @@ describe.each(Object.keys(users))('%s', (username) => {
                 console.log(response.body);
               });
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'delete', {id: id});
+        return;
       case 'editor':
       case 'user':
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(200)
@@ -393,11 +462,14 @@ describe.each(Object.keys(users))('%s', (username) => {
               .expect(401)
               .then(({body}) => expect(body.error).toBe('You don\'t have permission to delete that resource'));
           });
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', {error: 'You don\'t have permission to delete that resource'});
+        return;
       default:
-        return mockedGoose
+        await mockedGoose
           .get('/api/v1/products')
           .set('Authorization', `Bearer ${token}`)
           .expect(401);
+        expect(Q.publish).toHaveBeenCalledWith('database', 'error', { error: 'You don\'t have permission to read that resource' });
       }
     });
 

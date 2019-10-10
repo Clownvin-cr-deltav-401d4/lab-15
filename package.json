@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest --verbose",
-    "test-watch": "jest --watchAll --verbose",
+    "test": "jest --verbose --forceExit",
+    "test-watch": "jest --watchAll --verbose --forceExit",
     "start": "node index.js",
     "lint": "eslint 'src/*.js' 'src/**/*.js' '__tests__/*.js' '__tests__/**/*.js'",
     "jsdoc": "jsdoc -d './docs' './src/server.js' './src/routes/v1router.js' './src/models/mongo.js' './src/middleware/404.js' './src/middleware/error.js' './src/middleware/model-finder.js'"
@@ -17,6 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@nmq/q": "^1.0.5",
     "bcrypt": "^3.0.6",
     "cors": "^2.8.5",
     "dotenv": "^8.0.0",

@@ -8,6 +8,8 @@ const google = require('./oauth/google');
 
 const router = express.Router();
 
+const Q = require('@nmq/q/client');
+
 router.post('/signup', signUp);
 router.post('/signin', auth(), signIn);
 router.post('/setrole', auth(), setRole);

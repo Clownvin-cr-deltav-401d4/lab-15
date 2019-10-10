@@ -1,5 +1,7 @@
 'use strict';
 
+const Q = require('@nmq/q/client');
+
 /**
  * Handles any fallthrough requests that don't match any routes by
  * responding with a 404 error.
@@ -14,5 +16,6 @@ function handleNotFound(req, res, next) {
   res.setHeader('Content-Type', 'application/json');
   res.write(JSON.stringify(error));
   res.end();
+  Q.publish('database', 'error', error);
 }
 module.exports = handleNotFound;
